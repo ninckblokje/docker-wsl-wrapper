@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>docker</AssemblyName>
+    <Configurations>Debug;Release</Configurations>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>docker_wsl_wrapper</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <TargetFramework>net6.0</TargetFramework>
+    <Version>0.2.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>
