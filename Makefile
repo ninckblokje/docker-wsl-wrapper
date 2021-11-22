@@ -1,3 +1,5 @@
+GIT_SHORT_REV := $(shell git rev-parse --short HEAD)
+
 clean:
 	dotnet clean
 
@@ -9,4 +11,4 @@ watch:
 	dotnet watch
 
 publish:
-	dotnet publish -c Release
+	dotnet publish -c Release --version-suffix $(GIT_SHORT_REV)
