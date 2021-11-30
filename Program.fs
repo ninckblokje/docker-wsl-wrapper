@@ -25,7 +25,9 @@
 *)
 
 module DockerWslWrapper =
+    open System
     open System.Diagnostics
+    open System.IO
 
     type DockerWslWrapperConfig =
         {
@@ -39,14 +41,10 @@ module DockerWslWrapper =
         {
             Command: string;
             Arguments: string list;
+            WorkingDirectory: string;
         }
     
-    let executeCommand cmd =
-        let procStartInfo = new ProcessStartInfo(cmd.Command, cmd.Arguments[0..] |> String.concat " ")
-
-        use proc = new Process()
-        proc.StartInfo <- procStartInfo
-        
+    let executeProcess (proc: Process) =
         proc.Start() |> ignore
         proc.WaitForExit -1 |> ignore
         
@@ -56,13 +54,14 @@ module DockerWslWrapper =
         {
             Command = config.WslCommand
             Arguments = ["-d"; config.WslDistro; config.WslExec; config.DockerCommand] |> List.append <| (args |> Array.toList);
+            WorkingDirectory = Directory.GetCurrentDirectory();
         }
 
     let getConfigValue key defaultValue =
         let envValue = System.Environment.GetEnvironmentVariable key
         if envValue = null then defaultValue
         else envValue
-    
+
     let getConfig =
         {
             DockerCommand = getConfigValue "DWW_DOCKER_COMMAND" "docker";
@@ -70,6 +69,15 @@ module DockerWslWrapper =
             WslDistro = getConfigValue "DWW_WSL_DISTRO" "Ubuntu-20.04";
             WslExec = getConfigValue "DWW_WSL_EXEC" "--";
         }
+
+    let getProcess cmd =
+        let procStartInfo = new ProcessStartInfo(cmd.Command, cmd.Arguments[0..] |> String.concat " ")
+        procStartInfo.WorkingDirectory <- cmd.WorkingDirectory
+
+        let proc = new Process()
+        proc.StartInfo <- procStartInfo
+
+        proc
 
 open DockerWslWrapper
 open System.Diagnostics
@@ -81,4 +89,5 @@ let main args =
 
     getConfig
     |> fun config -> getCommand config args
-    |> executeCommand
+    |> getProcess
+    |> executeProcess
