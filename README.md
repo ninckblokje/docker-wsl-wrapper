@@ -30,3 +30,7 @@ The following environment variables can be set to configure the wrapper:
 | DWW_WSL_COMMAND | C:\Windows\System32\wsl.exe | The location of `wsl.exe` in Windows |
 | DWW_WSL_DISTRO | Ubuntu-20.04 | The WSL distro to use (see `wsl -l`) |
 | DWW_WSL_EXEC | -- | If a default shell is used (see `wsl -?` possible values: `--` or `--exec`) |
+
+## Debug logging
+
+To enable debug logging: Set the environment variable `DWW_DEBUG` to `true`.
