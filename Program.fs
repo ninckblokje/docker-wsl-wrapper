@@ -25,13 +25,17 @@
 *)
 
 module DockerWslWrapper =
-    open System
+
     open System.Diagnostics
     open System.IO
+    open System.Reflection
+    open System.Diagnostics
 
     type DockerWslWrapperConfig =
         {
             DockerCommand: string;
+            WrapperArgumentLine: string;
+            WrapperCommand: string;
             WslCommand: string;
             WslDistro: string;
             WslExec: string;
@@ -44,16 +48,27 @@ module DockerWslWrapper =
             WorkingDirectory: string;
         }
     
+    let getExecutedWrapperCommand =
+        if Assembly.GetExecutingAssembly().Location = "" then
+            FileVersionInfo.GetVersionInfo(System.Environment.ProcessPath).FileName
+        else
+            Assembly.GetExecutingAssembly().Location
+    
+    let getExecutedWrapperArgumentLine (commandLine: string) (wrapperCommand: string) = 
+        commandLine
+            .Replace(wrapperCommand, "")
+            .Trim()
+    
     let executeProcess (proc: Process) =
         proc.Start() |> ignore
         proc.WaitForExit -1 |> ignore
         
         proc.ExitCode
-    
-    let getCommand config args =
+
+    let getCommand config =
         {
             Command = config.WslCommand
-            Arguments = ["-d"; config.WslDistro; config.WslExec; config.DockerCommand] |> List.append <| (args |> Array.toList);
+            Arguments = ["-d"; config.WslDistro; config.WslExec; config.DockerCommand; config.WrapperArgumentLine]
             WorkingDirectory = Directory.GetCurrentDirectory();
         }
 
@@ -63,8 +78,13 @@ module DockerWslWrapper =
         else envValue
 
     let getConfig =
+        let wrapperCommand = getExecutedWrapperCommand
+        let argumentLine = getExecutedWrapperArgumentLine System.Environment.CommandLine wrapperCommand
+
         {
             DockerCommand = getConfigValue "DWW_DOCKER_COMMAND" "docker";
+            WrapperArgumentLine = argumentLine;
+            WrapperCommand = wrapperCommand;
             WslCommand = getConfigValue "DWW_WSL_COMMAND" "C:\\Windows\\System32\\wsl.exe";
             WslDistro = getConfigValue "DWW_WSL_DISTRO" "Ubuntu-20.04";
             WslExec = getConfigValue "DWW_WSL_EXEC" "--";
@@ -78,16 +98,30 @@ module DockerWslWrapper =
         proc.StartInfo <- procStartInfo
 
         proc
+    
+    let isFormatArgumentNotSpecified (argumentCommandLine: string) =
+        not(argumentCommandLine.Contains("--format"))
+    
+    let printDebugInfo item =
+        let debugEnabled = System.Environment.GetEnvironmentVariable "DWW_DEBUG"
+        if debugEnabled = "true" then
+            printfn "DockerWslWrapperConfig: %A" item
+        item
+    
+    let printVersionInfo config =
+        if isFormatArgumentNotSpecified config.WrapperArgumentLine then
+            printfn "docker-wsl-wrapper version %s" <| FileVersionInfo.GetVersionInfo(System.Environment.ProcessPath).ProductVersion
+            printfn "See: https://github.com/ninckblokje/docker-wsl-wrapper"
+        config
 
 open DockerWslWrapper
-open System.Diagnostics
 
 [<EntryPoint>]
-let main args =
-    printfn "docker-wsl-wrapper version %s" <| FileVersionInfo.GetVersionInfo(System.Environment.ProcessPath).ProductVersion;
-    printfn "See: https://github.com/ninckblokje/docker-wsl-wrapper"
-
+let main _ =
     getConfig
-    |> fun config -> getCommand config args
+    |> printVersionInfo
+    |> printDebugInfo
+    |> getCommand
+    |> printDebugInfo
     |> getProcess
     |> executeProcess
