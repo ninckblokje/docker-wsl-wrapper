@@ -24,12 +24,30 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
 
+module DockerWslWrapperArguments =
+    open System.Text.RegularExpressions
+
+    let getExecutedWrapperArgumentLine (commandLine: string) (wrapperCommand: string) = 
+        commandLine
+            .Replace(wrapperCommand, "")
+            .Trim()
+    
+    let replacePath argument =
+        if Regex.IsMatch(argument, "^\\\"?[a-zA-Z]:\\\\.+") then
+            "$(wslpath -u " + (argument.Replace("\\", "/")) + ")"
+        else argument
+
+    let splitExecutedWrapperArgumentLine argumentLine =
+        Regex.Matches(argumentLine, @"[\""].+?[\""]|[^ ]+")
+            |> Seq.cast<Match>
+            |> Seq.map(fun m -> m.Value)
+
 module DockerWslWrapper =
 
+    open DockerWslWrapperArguments
     open System.Diagnostics
     open System.IO
     open System.Reflection
-    open System.Diagnostics
 
     type DockerWslWrapperConfig =
         {
@@ -47,23 +65,24 @@ module DockerWslWrapper =
             Arguments: string list;
             WorkingDirectory: string;
         }
-    
-    let getExecutedWrapperCommand =
-        if Assembly.GetExecutingAssembly().Location = "" then
-            FileVersionInfo.GetVersionInfo(System.Environment.ProcessPath).FileName
-        else
-            Assembly.GetExecutingAssembly().Location
-    
-    let getExecutedWrapperArgumentLine (commandLine: string) (wrapperCommand: string) = 
-        commandLine
-            .Replace(wrapperCommand, "")
-            .Trim()
+        
+    let printDebugInfo item =
+        let debugEnabled = System.Environment.GetEnvironmentVariable "DWW_DEBUG"
+        if debugEnabled = "true" then
+            printfn "%A: %A" (item.GetType()) item
+        item
     
     let executeProcess (proc: Process) =
         proc.Start() |> ignore
         proc.WaitForExit -1 |> ignore
         
         proc.ExitCode
+    
+    let getExecutedWrapperCommand =
+        if Assembly.GetExecutingAssembly().Location = "" then
+            FileVersionInfo.GetVersionInfo(System.Environment.ProcessPath).FileName
+        else
+            Assembly.GetExecutingAssembly().Location
 
     let getCommand config =
         {
@@ -79,7 +98,13 @@ module DockerWslWrapper =
 
     let getConfig =
         let wrapperCommand = getExecutedWrapperCommand
-        let argumentLine = getExecutedWrapperArgumentLine System.Environment.CommandLine wrapperCommand
+        let argumentLine =
+            getExecutedWrapperArgumentLine System.Environment.CommandLine wrapperCommand
+                |> splitExecutedWrapperArgumentLine
+                |> printDebugInfo
+                |> Seq.map replacePath
+                |> printDebugInfo
+                |> String.concat " "
 
         {
             DockerCommand = getConfigValue "DWW_DOCKER_COMMAND" "docker";
@@ -101,12 +126,6 @@ module DockerWslWrapper =
     
     let isFormatArgumentNotSpecified (argumentCommandLine: string) =
         not(argumentCommandLine.Contains("--format"))
-    
-    let printDebugInfo item =
-        let debugEnabled = System.Environment.GetEnvironmentVariable "DWW_DEBUG"
-        if debugEnabled = "true" then
-            printfn "DockerWslWrapperConfig: %A" item
-        item
     
     let printVersionInfo config =
         if isFormatArgumentNotSpecified config.WrapperArgumentLine then

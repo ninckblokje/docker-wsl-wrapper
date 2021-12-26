@@ -31,6 +31,13 @@ The following environment variables can be set to configure the wrapper:
 | DWW_WSL_DISTRO | Ubuntu-20.04 | The WSL distro to use (see `wsl -l`) |
 | DWW_WSL_EXEC | -- | If a default shell is used (see `wsl -?` possible values: `--` or `--exec`) |
 
+## Argument parsing
+
+Arguments are parsed before being passed on to Docker in WSL:
+
+- If `--format` is specified then no version info is outputted
+- If a path is specified then the path is transformed to a WSL path using `wslpath` (for example `C:\temp` -> `$(wslpath -u C:/temp)`)
+
 ## Debug logging
 
 To enable debug logging: Set the environment variable `DWW_DEBUG` to `true`.
