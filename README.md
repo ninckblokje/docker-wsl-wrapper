@@ -16,6 +16,21 @@ The Docker daemon must be started manually in WSL (Ubuntu) using the following c
 
 Docker is integrating Compose into the `docker` command. This must be installed manually on Linux. See https://docs.docker.com/compose/cli-command/#install-on-linux for more information.
 
+### Credentials
+
+To correctly share credentials with other applications (for example with [jib](https://github.com/GoogleContainerTools/jib)) setup the `wincred` credential helper from Docker.
+
+1. Download the `wincred` credential helper from https://github.com/docker/docker-credential-helpers/releases
+2. Place it on your Windows path
+3. In WSL create a symbolic link in `/usr/local/bin` (in this `example docker-credential-wincred.exe` is stored in `C:\tools`):
+
+````bash
+# get the WSL path:
+wslpath 'c:\tools\docker-credential-wincred.exe'
+# create the symbolic link:
+sudo ln -s $(wslpath 'c:\tools\docker-credential-wincred.exe') /usr/local/bin/docker-credential-wincred
+````
+
 ## Installation
 
 Download the execute from GitHub releases and place it on the path.
