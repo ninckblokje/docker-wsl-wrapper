@@ -18,7 +18,7 @@ Docker is integrating Compose into the `docker` command. This must be installed 
 
 ### Credentials
 
-To correctly share credentials with other applications (for example with [jib](https://github.com/GoogleContainerTools/jib)) setup the `wincred` credential helper from Docker.
+To correctly share credentials with other applications (for example with [jib](https://github.com/GoogleContainerTools/jib)) setup the `wincred` credential helper from Docker (see https://docs.docker.com/engine/reference/commandline/login/#credentials-store).
 
 1. Download the `wincred` credential helper from https://github.com/docker/docker-credential-helpers/releases
 2. Place it on your Windows path
@@ -30,6 +30,10 @@ wslpath 'c:\tools\docker-credential-wincred.exe'
 # create the symbolic link:
 sudo ln -s $(wslpath 'c:\tools\docker-credential-wincred.exe') /usr/local/bin/docker-credential-wincred
 ````
+
+### buildx
+
+To enable buildx support in Docker, execute the following command: `docker buildx create --use`
 
 ## Installation
 
