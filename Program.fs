@@ -124,11 +124,11 @@ module DockerWslWrapper =
 
         proc
     
-    let isFormatArgumentNotSpecified (argumentCommandLine: string) =
-        not(argumentCommandLine.Contains("--format"))
+    let isVersionRequests (argumentCommandLine: string) =
+        argumentCommandLine.Equals "-v" || argumentCommandLine.Equals "--version"
     
     let printVersionInfo config =
-        if isFormatArgumentNotSpecified config.WrapperArgumentLine then
+        if isVersionRequests config.WrapperArgumentLine then
             printfn "docker-wsl-wrapper version %s" <| FileVersionInfo.GetVersionInfo(System.Environment.ProcessPath).ProductVersion
             printfn "See: https://github.com/ninckblokje/docker-wsl-wrapper"
         config
